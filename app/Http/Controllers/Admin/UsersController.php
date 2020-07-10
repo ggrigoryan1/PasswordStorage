@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\User;
 use App\Models\Role;
+use App\Http\Controllers\MailController;
 
 class UsersController extends Controller
 {
@@ -58,6 +59,8 @@ class UsersController extends Controller
         if ($request->role != 0) {
             $user->roles()->attach($request->role);
         }
+        $mail = new MailController();
+        $mail->send_email($request['email'], $request['password']);
 
         return redirect()->route('user.index');
     }
@@ -85,6 +88,8 @@ class UsersController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $sendMail = false;
+
         $validator = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -97,6 +102,10 @@ class UsersController extends Controller
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
+        if (($request['email'] !== $user->email) || ($request['password'] !== null)) {
+            $sendMail = true;
+        }
+
         $user->name = $request['name'];
         $user->email = $request['email'];
         $request['password'] == null ?: $user->password = bcrypt($request['password']);
@@ -104,6 +113,9 @@ class UsersController extends Controller
             $user->roles()->attach($request->role);
         }
         $user->save();
+
+        $mail = new MailController();
+        $mail->send_email($request['email'], $request['password']);
 
         return redirect()->route('user.index');
     }

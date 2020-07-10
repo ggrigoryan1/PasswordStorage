@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Auth;
+
+use App\Models\Project;
+use App\Models\Download;
 
 class HomeController extends Controller
 {
@@ -24,7 +26,19 @@ class HomeController extends Controller
      */
     public function index()
     {
-        dd(Auth::user());
-        return view('home');
+        return view('home', [
+            'projects' => Project::orderBy('created_at', 'desc')->paginate(10)
+        ]);
+    }
+
+    public function project($id) {
+    	return view('project', [
+    		'project' => Project::with('downloads')->where('id', $id)->first()
+    	]);
+    }
+
+    public function fileDownload(Download $download)
+    {
+        return response()->download(storage_path('app/public/'. $download->path), $download->filename);
     }
 }
